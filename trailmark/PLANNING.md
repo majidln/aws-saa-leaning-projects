@@ -39,11 +39,12 @@ This keeps "apply and destroy per chapter" honest in the early chapters, and avo
 
 ### Chapter 2 — Real Traffic, Real Speed (CDN + HTTPS)
 - **Entry criteria:** Chapter 1's bucket exists (this chapter builds on it directly — don't destroy Chapter 1 before starting this one).
-- **State backend bootstrap wrinkle (decided, flagged early on purpose):** the S3 bucket + DynamoDB table used for remote state have to be created *somehow* — via a small local-state config — before the "real" Chapter 2 config can point its backend at them. Treat this as a mini-step at the very start of the chapter, not a surprise partway through.
-- **Exit criteria:** site served over HTTPS via CloudFront, S3 no longer publicly reachable directly (verify by trying the raw bucket URL and confirming it's blocked), state now lives in S3 with DynamoDB locking confirmed (e.g. by observing a lock during a deliberate concurrent `plan`).
-- **Cost checkpoint:** CloudFront + S3 + DynamoDB (on-demand) are all low-cost but not free if left running indefinitely — fine to leave up longer than Chapter 1 given the setup cost of remote state, but don't forget about it.
+- **State backend bootstrap wrinkle (decided, flagged early on purpose):** the S3 bucket used for remote state has to be created *somehow* — via a small local-state config — before the "real" Chapter 2 config can point its backend at it. Treat this as a mini-step at the very start of the chapter, not a surprise partway through.
+- **Exit criteria:** site served over HTTPS via CloudFront, S3 no longer publicly reachable directly (verify by trying the raw bucket URL and confirming it's blocked), state now lives in S3 with native S3 locking (`use_lockfile = true`) confirmed (e.g. by observing lock behavior during a deliberate concurrent `plan`).
+- **Cost checkpoint:** CloudFront + S3 are both low-cost but not free if left running indefinitely — fine to leave up longer than Chapter 1 given the setup cost of remote state, but don't forget about it.
 - **Open decisions:**
   - ACM cert domain: placeholder/self-managed domain vs. CloudFront's default domain **(decided by README — Route 53 is out of scope, so default to CloudFront's own domain unless you specifically want to practice a placeholder cert)**.
+  - State locking mechanism: DynamoDB table vs. native S3 locking **(decided — using native S3 locking via `use_lockfile = true`, no DynamoDB table. This is the newer approach, available since Terraform 1.10; the README's original wording assumed the older DynamoDB pattern, which is still the more common one in existing real-world codebases but is no longer the recommended default for new configs)**.
 
 ### Chapter 3 — The Trail Search Feature (3-Tier Architecture)
 - **Entry criteria:** budget alarm from §1 confirmed active (this is where cost risk starts for real); repo layout decision from §2 confirmed.
@@ -79,4 +80,5 @@ This keeps "apply and destroy per chapter" honest in the early chapters, and avo
 | Default AWS region | Before Chapter 1 | `us-east-1` |
 | Repo layout (per-chapter dirs vs. shared modules) | Before Chapter 3 | Per-chapter dirs for Ch.1–2, shared `modules/` from Ch.3 on |
 | ACM cert domain | Chapter 2 | CloudFront default domain (Route 53 out of scope) |
+| State locking mechanism | Chapter 2 | Native S3 locking (`use_lockfile = true`), no DynamoDB table |
 | Environment separation strategy | Chapter 4 | Folder-per-environment first, workspaces as a follow-up comparison |
