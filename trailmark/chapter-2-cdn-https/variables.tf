@@ -12,3 +12,8 @@ variable "bucket_name" {
   type    = string
   default = "Trailmark Chapter 2: CDN and HTTPS Frontend"
 }
+
+variable "state-bucket" {
+  type    = string
+  default = "trailmark-state-backend"
+}
