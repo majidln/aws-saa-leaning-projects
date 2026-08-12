@@ -59,7 +59,7 @@ A VPC spanning 2 Availability Zones, divided into three subnet tiers:
 
 | Layer | Subnet | Contents | Reachable from |
 |---|---|---|---|
-| Presentation | Public subnets | Application Load Balancer (ALB) | Internet, port 443 |
+| Presentation | Public subnets | Application Load Balancer (ALB) | Internet, port 80 (443 would need ACM + a domain via Route 53, out of scope until later) |
 | Application | Private subnets | EC2 instances in an Auto Scaling Group, running the trail-search API | ALB's security group only |
 | Data | Private (isolated) subnets | RDS Postgres instance | App tier's security group only, port 5432 |
 
@@ -73,7 +73,7 @@ Supporting pieces:
 **Terraform structure:** three modules, composed in a root configuration:
 - `modules/network` — VPC, subnets, route tables, IGW, NAT Gateway
 - `modules/app-tier` — launch template, Auto Scaling Group, ALB, target group, listener
-- `modules/data-tier` — RDS instance, subnet group, Secrets Manager secret
+- `modules/db-tier` — RDS instance, subnet group, Secrets Manager secret
 
 **Terraform concepts:**
 - Writing and consuming your own modules (inputs/outputs between modules)

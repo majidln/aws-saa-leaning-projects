@@ -27,3 +27,8 @@ variable "app_port" {
   description = "Port for the app tier"
   default     = 8080
 }
+
+variable "db_secret_arn" {
+  type        = string
+  description = "ARN of the Secrets Manager secret with DB credentials"
+}

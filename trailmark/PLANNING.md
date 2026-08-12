@@ -49,7 +49,7 @@ This is a deliberate trade-off against the DRY instinct real teams would apply �
 
 ### Chapter 3 — The Trail Search Feature (3-Tier Architecture)
 - **Entry criteria:** budget alarm from §1 confirmed active (this is where cost risk starts for real); repo layout decision from §2 confirmed.
-- **Exit criteria:** ALB reachable on 443 from the internet; app tier reachable only from the ALB's security group; RDS reachable only from the app tier's security group on 5432; DB credentials confirmed to live in Secrets Manager, not in `.tf` files or state-visible variables; each module (`network`, `app-tier`, `db-tier`) exercised with its own inputs/outputs.
+- **Exit criteria:** ALB reachable on 80 from the internet (see Chapter 3's guide §3 for why 443 wasn't viable without Route 53/ACM); app tier reachable only from the ALB's security group; RDS reachable only from the app tier's security group on 5432; DB credentials confirmed to live in Secrets Manager, not in `.tf` files or state-visible variables; each module (`network`, `app-tier`, `db-tier`) exercised with its own inputs/outputs.
 - **Cost checkpoint — the big one:** NAT Gateway (hourly + per-GB charge) and RDS are the most expensive resources in the whole project. Plan to `terraform destroy` promptly once verification is done, rather than leaving this stack up between sessions.
 - **Open decisions:**
   - DB isolation rule: none — fixed by the engineering-lead constraint in the README, not a tradeoff to explore.
