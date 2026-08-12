@@ -3,7 +3,7 @@ output "vpc_id" {
   description = "ID of the created VPC"
 }
 
-output "web_subnet_ids" {
+output "public_subnet_ids" {
   value = [for k in keys(local.public_subnets) : aws_subnet.this[k].id]
 }
 
