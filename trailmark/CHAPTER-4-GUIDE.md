@@ -80,7 +80,7 @@ What you built instead has **two independent selectors**:
 
 Nothing ties them together. `terraform workspace select prod` with `-var-file=dev.tfvars` is a valid command that plans cleanly: it writes to prod's state, tags everything `Environment = prod`, and names every resource `chapter-4-dev-*` at dev's sizing.
 
-**This is not hypothetical here.** `workspace-lab/errored.tfstate` in this repo contains `chapter-4-dev-app-asg`, `chapter-4-dev-app-instance-role`, and a `chapter-4-dev` VPC, while `.terraform/environment` reads `prod`. Whatever the exact sequence was, the two selectors disagreed during a real run. Read that file before you delete it — it's the most useful artifact this chapter has produced so far.
+**This is not hypothetical here.** It happened during this chapter. A `workspace-lab/errored.tfstate` — the file Terraform writes locally when it cannot persist state to the backend — held `chapter-4-dev-app-asg`, `chapter-4-dev-app-instance-role`, and a `chapter-4-dev` VPC, while `.terraform/environment` read `prod`. The two selectors disagreed during a real run, and the record of it was a state file describing dev resources under prod's workspace. That file has since been deleted; this paragraph is the evidence.
 
 **The fix, and the actual remaining Terraform work: collapse two selectors into one.** The workspace should be the only thing you choose. Two pieces:
 
@@ -111,7 +111,7 @@ Note what §3 does to this workflow: every step above depends on `workspace sele
 
 1. Collapse the two selectors — derive `prefix` from the workspace, and decide on the workspace-keyed map vs. `.tfvars` (§3).
 2. Fix the backend `key` so it stops claiming to be dev (§3).
-3. Read, then delete, `workspace-lab/errored.tfstate`.
+3. ~~Read, then delete, `workspace-lab/errored.tfstate`.~~ ✅ done
 4. Move the `az_count` variable out of `modules/network/main.tf` into that module's `variables.tf`, where the other variables live.
 5. Run the §4 workflow once end to end — apply dev, verify, then apply prod.
 6. Answer §6 in writing.

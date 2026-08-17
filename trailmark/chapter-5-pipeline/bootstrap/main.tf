@@ -135,8 +135,6 @@ resource "aws_iam_role_policy" "plan_access" {
   policy = data.aws_iam_policy_document.plan_access.json
 }
 
-
-# is one empty demo bucket.
 data "aws_iam_policy_document" "apply_access" {
   statement {
     sid    = "ManageDemoBucket"
