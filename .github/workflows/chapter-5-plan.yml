@@ -1,0 +1,77 @@
+name: Chapter 5 Plan
+
+on:
+  pull_request:
+    paths:
+      - 'trailmark/chapter-5-pipeline/**'
+      - '.github/workflows/chapter-5-plan.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+env:
+  # A repository VARIABLE, not a secret. A role ARN is an address, not a
+  # credential — the trust policy is what protects the role. Variables are not
+  # masked, so the value stays readable in logs when something goes wrong.
+  PLAN_ROLE_ARN: ${{ vars.PLAN_ROLE_ARN }}
+
+jobs:
+  plan:
+
+    defaults:
+      run:
+        working-directory: trailmark/chapter-5-pipeline/stack
+
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+
+      # Prints the claims GitHub put in the token, before AWS ever sees them.
+      # This is the fastest way to debug an OIDC AccessDenied: compare `sub` here
+      # against the trust policy. Only selected claims are printed — never echo
+      # the raw token, that IS a credential.
+      - name: Debug OIDC claims
+        run: |
+          echo "role-to-assume: $PLAN_ROLE_ARN"
+          if [ -z "$PLAN_ROLE_ARN" ]; then
+            echo "::error::PLAN_ROLE_ARN is empty - create the repository variable under Settings > Secrets and variables > Actions > Variables"
+            exit 1
+          fi
+          TOKEN=$(curl -sH "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
+          python3 - "$TOKEN" <<'PY'
+          import base64, json, sys
+          payload = sys.argv[1].split(".")[1]
+          payload += "=" * (-len(payload) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(payload))
+          keep = ("sub", "aud", "repository", "repository_owner", "ref", "event_name")
+          print(json.dumps({k: claims[k] for k in keep if k in claims}, indent=2))
+          PY
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.PLAN_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Confirm which identity we assumed
+        run: aws sts get-caller-identity
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -no-color
