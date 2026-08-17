@@ -12,6 +12,9 @@ permissions:
   contents: read      
   id-token: write    
 
+env:
+  APPLY_ROLE_ARN: ${{ vars.APPLY_ROLE_ARN }}
+
 concurrency:
   group: chapter-5-apply
   cancel-in-progress: false
@@ -39,7 +42,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.APPLY_ROLE_ARN }}
+          role-to-assume: ${{ env.APPLY_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Confirm which identity we are using

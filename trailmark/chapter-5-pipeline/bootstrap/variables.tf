@@ -24,11 +24,11 @@ variable "state_bucket" {
 
 variable "github_repo" {
   type        = string
-  description = "GitHub repository allowed to assume these roles, as owner/name"
-  default     = "majidln/aws-saa-leaning-projects"
+  description = "GitHub repo allowed to assume these roles, as it appears in the token's sub claim"
+  default     = "majidln@8521168/aws-saa-leaning-projects@1326414898"
 
   validation {
-    condition     = can(regex("^[^/]+/[^/]+$", var.github_repo))
-    error_message = "Must be exactly owner/name — a wildcard here would let any GitHub repo assume these roles."
+    condition     = can(regex("^[^/*]+/[^/*]+$", var.github_repo))
+    error_message = "Must be exactly one owner/repo pair with no wildcard — a wildcard here would let other GitHub repos assume these roles."
   }
 }
