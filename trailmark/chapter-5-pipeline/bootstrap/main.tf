@@ -48,16 +48,12 @@ data "aws_iam_policy_document" "assume_apply" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # Only a workflow running on main. Any other branch, tag, or pull request
+    # produces a different `sub` and AWS refuses the assume-role outright.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:environment:${var.github_environment}"]
-    }
-
-    condition {
-      test     = "StringEquals"
-      variable = "token.actions.githubusercontent.com:ref"
-      values   = ["refs/heads/main"]
+      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
     }
   }
 }

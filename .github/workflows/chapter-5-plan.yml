@@ -42,9 +42,6 @@ jobs:
           role-to-assume: ${{ env.PLAN_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Confirm which identity we assumed
-        run: aws sts get-caller-identity
-
       - name: Terraform Init
         run: terraform init
 

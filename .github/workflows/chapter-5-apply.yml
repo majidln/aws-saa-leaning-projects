@@ -24,8 +24,6 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
 
-    environment: chapter-5-deploy
-
     defaults:
       run:
         working-directory: trailmark/chapter-5-pipeline/stack
@@ -44,9 +42,6 @@ jobs:
         with:
           role-to-assume: ${{ env.APPLY_ROLE_ARN }}
           aws-region: us-east-1
-
-      - name: Confirm which identity we are using
-        run: aws sts get-caller-identity
 
       - name: Terraform Init
         run: terraform init -input=false
