@@ -48,5 +48,47 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      # continue-on-error so a failed plan still gets posted to the PR — the error
+      # is the most useful thing to show a reviewer. The job is failed explicitly
+      # in the last step instead.
       - name: Terraform Plan
-        run: terraform plan -no-color
+        id: plan
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          terraform plan -input=false -no-color 2>&1 | tee plan.txt
+
+      # The plan text goes in a comment, never as an uploaded artifact: a plan file
+      # contains every attribute in the clear, and artifacts outlive the run.
+      # This stack has no passwords or secrets in it, which is what makes posting
+      # it safe at all — do not reuse this step on a stack that does.
+      - name: Post plan to the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          OUTCOME: ${{ steps.plan.outcome }}
+        run: |
+          LIMIT=60000   # GitHub caps a comment at 65536 characters
+          {
+            if [ "$OUTCOME" = "success" ]; then
+              echo "### Terraform Plan"
+            else
+              echo "### Terraform Plan — FAILED"
+            fi
+            echo
+            echo '```terraform'
+            head -c "$LIMIT" plan.txt
+            echo '```'
+            if [ "$(wc -c < plan.txt)" -gt "$LIMIT" ]; then
+              echo
+              echo "_Output truncated. See the full plan in the workflow run._"
+            fi
+          } > comment.md
+          # Edit the existing comment when possible so repeated pushes to the same
+          # PR do not bury it under duplicates.
+          gh pr comment "$PR" --body-file comment.md --edit-last \
+            || gh pr comment "$PR" --body-file comment.md
+
+      - name: Fail the job if the plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1

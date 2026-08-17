@@ -78,31 +78,61 @@ resource "aws_iam_role" "apply" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "plan_readonly" {
-  role       = aws_iam_role.plan.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
-}
-
-# `terraform plan` is not purely read-only: with use_lockfile = true it writes a
-# lock object to S3 and deletes it afterwards.
-data "aws_iam_policy_document" "s3_access" {
+data "aws_iam_policy_document" "plan_access" {
   statement {
+    sid    = "ReadDemoBucket"
     effect = "Allow"
 
     actions = [
-      "s3:GetObject",
+      "s3:Get*",
+      "s3:List*",
+    ]
+
+    resources = [
+      "arn:aws:s3:::${var.stack_bucket}",
+      "arn:aws:s3:::${var.stack_bucket}/*",
+    ]
+  }
+
+  statement {
+    sid    = "ReadOwnState"
+    effect = "Allow"
+
+    actions = ["s3:GetObject"]
+
+    resources = [
+      "arn:aws:s3:::${var.state_bucket}/chapter-5-pipeline/stack/terraform.tfstate",
+    ]
+  }
+
+  statement {
+    sid    = "ManageOwnLock"
+    effect = "Allow"
+
+    actions = [
       "s3:PutObject",
       "s3:DeleteObject",
     ]
 
-    resources = ["*"]
+    resources = [
+      "arn:aws:s3:::${var.state_bucket}/chapter-5-pipeline/stack/terraform.tfstate.tflock",
+    ]
+  }
+
+  statement {
+    sid    = "ListStateBucket"
+    effect = "Allow"
+
+    actions = ["s3:ListBucket"]
+
+    resources = ["arn:aws:s3:::${var.state_bucket}"]
   }
 }
 
-resource "aws_iam_role_policy" "s3_access" {
-  name   = "${var.prefix}-s3-access"
+resource "aws_iam_role_policy" "plan_access" {
+  name   = "${var.prefix}-plan-access"
   role   = aws_iam_role.plan.id
-  policy = data.aws_iam_policy_document.s3_access.json
+  policy = data.aws_iam_policy_document.plan_access.json
 }
 
 
