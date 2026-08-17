@@ -20,6 +20,6 @@ resource "aws_s3_bucket_public_access_block" "state_backend_public_access_block"
 }
 
 output "bucket_name" {
-  value = aws_s3_bucket.state_backend.bucket
+  value       = aws_s3_bucket.state_backend.bucket
   description = "Output for bucket name"
 }

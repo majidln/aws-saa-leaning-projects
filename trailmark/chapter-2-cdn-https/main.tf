@@ -88,8 +88,8 @@ resource "aws_cloudfront_origin_access_control" "default" {
 ### Create cloudfront distribution to serve the frontend files
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name = aws_s3_bucket.chapter2_launch_page.bucket_regional_domain_name
-    origin_id   = aws_s3_bucket.chapter2_launch_page.id
+    domain_name              = aws_s3_bucket.chapter2_launch_page.bucket_regional_domain_name
+    origin_id                = aws_s3_bucket.chapter2_launch_page.id
     origin_access_control_id = aws_cloudfront_origin_access_control.default.id
   }
 
@@ -128,14 +128,14 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   custom_error_response {
-    error_code            = 404
-    response_code         = 404
-    response_page_path    = "/error.html"
+    error_code         = 404
+    response_code      = 404
+    response_page_path = "/error.html"
   }
 
   custom_error_response {
-    error_code = 403
-    response_code = 403
+    error_code         = 403
+    response_code      = 403
     response_page_path = "/error.html"
   }
 }

@@ -1,0 +1,11 @@
+prefix                  = "chapter-4-prod"
+region                  = "us-east-1"
+instance_type           = "t3.micro"
+app_port                = 8080
+db_port                 = 5432
+asg_min_size            = 2
+asg_max_size            = 4
+asg_desired_capacity    = 2
+single_nat_gateway      = false
+recovery_window_in_days = 30
+db_instance_class       = "db.t3.micro"

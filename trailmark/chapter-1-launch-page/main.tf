@@ -17,11 +17,11 @@ locals {
 }
 
 resource "aws_s3_object" "frontend" {
-  bucket           = aws_s3_bucket.chapter1_launch_page.id
-  key              = each.value
-  source           = "./frontend/${each.value}"
-  etag             = filemd5("./frontend/${each.value}")
-  content_type     = lookup(local.content_types, element(split(".", each.value), length(split(".", each.value)) - 1), "text/plain")
+  bucket       = aws_s3_bucket.chapter1_launch_page.id
+  key          = each.value
+  source       = "./frontend/${each.value}"
+  etag         = filemd5("./frontend/${each.value}")
+  content_type = lookup(local.content_types, element(split(".", each.value), length(split(".", each.value)) - 1), "text/plain")
 
   for_each = fileset("./frontend/", "*")
 }
@@ -65,6 +65,6 @@ resource "aws_s3_bucket_website_configuration" "chapter1_launch_page_website" {
 }
 
 output "frontend_endpoint" {
-  value = aws_s3_bucket_website_configuration.chapter1_launch_page_website.website_endpoint
+  value       = aws_s3_bucket_website_configuration.chapter1_launch_page_website.website_endpoint
   description = "The endpoint of the S3 bucket hosting the frontend."
 }

@@ -5,13 +5,18 @@ provider "aws" {
 terraform {
   backend "s3" {
     bucket       = "trailmark-state-backend"
-    key          = "chapter-2-cdn-https/terraform.tfstate"
+    key          = "chapter-4-envs/terraform.tfstate"
     region       = "us-east-1"
     use_lockfile = true
   }
   required_providers {
     aws = {
+      source  = "hashicorp/aws"
       version = "~> 5.52.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
     }
   }
 

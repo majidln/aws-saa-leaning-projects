@@ -1,0 +1,26 @@
+# Terraform downloads providers and records local workspace selection here.
+.terraform/
+
+# Never commit state, lock metadata, crash logs, or saved plan files.
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
+*.tfplan
+plan.out
+
+# Local overrides are for a developer's machine only.
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Environment inputs may eventually contain secrets. Commit only the current
+# non-sensitive sizing files used by this workspace exercise.
+*.tfvars
+*.tfvars.json
+!workspace-lab/dev.tfvars
+!workspace-lab/prod.tfvars
+
+# Keep .terraform.lock.hcl committed: it pins provider checksums and versions.

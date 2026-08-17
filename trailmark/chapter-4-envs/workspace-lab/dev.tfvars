@@ -1,0 +1,11 @@
+prefix                  = "chapter-4-dev"
+region                  = "us-east-1"
+instance_type           = "t2.micro"
+app_port                = 8080
+db_port                 = 5432
+asg_min_size            = 1
+asg_max_size            = 2
+asg_desired_capacity    = 1
+single_nat_gateway      = true
+recovery_window_in_days = 0
+db_instance_class       = "db.t3.micro"
