@@ -24,7 +24,7 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
 
-    environment: chapter-5-production
+    environment: chapter-5-deploy
 
     defaults:
       run:

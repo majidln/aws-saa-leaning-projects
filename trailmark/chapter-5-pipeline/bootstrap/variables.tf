@@ -16,6 +16,12 @@ variable "stack_bucket" {
   default     = "trailmark-chapter-5-pipeline-demo"
 }
 
+variable "github_environment" {
+  type        = string
+  description = "GitHub Environment the apply job runs in. Must match `environment:` in chapter-5-apply.yml exactly, and the environment must exist in repo settings with required reviewers."
+  default = "chapter-5-deploy"
+}
+
 variable "state_bucket" {
   type        = string
   description = "Remote state bucket. Matches the backend block, which cannot use variables."
