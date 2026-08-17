@@ -102,6 +102,7 @@ data "aws_iam_policy_document" "plan_access" {
 
     resources = [
       "arn:aws:s3:::${var.state_bucket}/chapter-5-pipeline/stack/terraform.tfstate",
+      "arn:aws:s3:::${var.state_bucket}/chapter-5-pipeline/stack/terraform.tfstate.tflock",
     ]
   }
 
