@@ -59,7 +59,7 @@ Auth0 tenant, one API (its **identifier** becomes the `aud` claim), one M2M appl
 ### Step 2 — Plumbing before a lock
 There's a token and nowhere to send it. An authorizer rejects things, and rejections are hard to debug on infra not yet trusted.
 
-Terraform: REST API, `GET /hello`, `cmd/hello` behind it, no auth at all. Makefile build, `archive_file`, a log group declared with retention (not left for Lambda to create with never-expire).
+Terraform: REST API, `GET /hello`, `cmd/hello` behind it, no auth at all. Makefile build, `archive_file`, a log group declared with retention (not left for Lambda to create with never-expire). See [STEP-2-GUIDE.md](STEP-2-GUIDE.md).
 
 **Exit:** `curl` gets 200 with no `Authorization` header. `terraform destroy` and `apply` once, cleanly. A code change redeploys the function on the next `apply` — if it doesn't, `source_code_hash` isn't wired.
 
