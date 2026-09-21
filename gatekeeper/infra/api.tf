@@ -18,7 +18,8 @@ resource "aws_api_gateway_method" "hello_get" {
   rest_api_id   = aws_api_gateway_rest_api.gatekeeper.id
   resource_id   = aws_api_gateway_resource.hello.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.this.id
 }
 
 resource "aws_api_gateway_integration" "hello_get" {
@@ -46,11 +47,14 @@ resource "aws_api_gateway_deployment" "gatekeeper" {
   rest_api_id = aws_api_gateway_rest_api.gatekeeper.id
 
   # A deployment is a snapshot; any route change must produce a new one.
+  # Hash whole resources, not IDs: switching the method to CUSTOM auth
+  # keeps its ID the same, so an ID-only hash would never redeploy.
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.hello.id,
-      aws_api_gateway_method.hello_get.id,
-      aws_api_gateway_integration.hello_get.id,
+      aws_api_gateway_resource.hello,
+      aws_api_gateway_method.hello_get,
+      aws_api_gateway_integration.hello_get,
+      aws_api_gateway_authorizer.this,
     ]))
   }
 

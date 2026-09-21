@@ -2,7 +2,7 @@
 
 A multi-tenant API on AWS where Auth0 issues the tokens and a hand-written Lambda authorizer decides who gets in — a learning project for auth, JWT validation, and Auth0.
 
-Not started yet. The full roadmap is in [PLANNING.md](PLANNING.md); `STEP-N-GUIDE.md` files come as each step begins.
+In progress. The full roadmap is in [PLANNING.md](PLANNING.md); `STEP-N-GUIDE.md` files come as each step begins, and findings go in [RESULTS.md](RESULTS.md).
 
 ---
 
@@ -40,6 +40,28 @@ Rejected: AWS SAM, Cognito (the goal is Auth0), HTTP API native JWT authorizer, 
 - [ ] Terraform CLI, AWS CLI, Go 1.22+
 - [ ] Free Auth0 tenant (Developer plan)
 - [ ] Auth0 CLI (optional, useful from Step 4)
+
+---
+
+## Tests
+
+Unit tests need no AWS account, no Auth0 tenant, and no network: tokens are signed with an RSA key generated inside the test. Each function under `cmd/` is its own Go module, so run tests from that function's directory.
+
+```bash
+cd cmd/authorizer && go test ./...
+```
+
+Useful variants, all from `cmd/authorizer`:
+
+```bash
+go test -v ./...                        # every case, by name
+go test -race -count=1 ./...            # race detector, bypass the test cache
+go test -cover ./...                    # coverage
+go test -run TestVerifyToken -v ./...   # one test
+go test -run 'TestVerifyToken/expired' -v ./...   # one case inside a test
+```
+
+Not covered by unit tests: `main()` (reads `AUTH0_DOMAIN`/`AUTH0_AUDIENCE` and fetches the JWKS), which is exercised against the deployed API.
 
 ---
 

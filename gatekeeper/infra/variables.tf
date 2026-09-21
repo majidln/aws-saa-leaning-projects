@@ -10,8 +10,25 @@ variable "log_retention_days" {
   default     = 7
 }
 
+variable "authorizer_cache_ttl" {
+  description = "Seconds API Gateway caches an authorizer decision (Allow and Deny alike), keyed by the Authorization header. 0 disables caching; max 3600."
+  type        = number
+  default     = 300
+}
+
 variable "stage_name" {
   description = "API Gateway stage name — also the URL path segment (.../<stage_name>/hello). Override with TF_VAR_stage_name."
   type        = string
   default     = "dev"
+}
+
+variable "auth0_domain" {
+  description = "Auth0 tenant domain, no scheme and no trailing slash (e.g. dev-abc123.eu.auth0.com). Set with TF_VAR_auth0_domain."
+  type        = string
+}
+
+variable "auth0_audience" {
+  description = "API identifier registered in Auth0. Becomes the token's aud claim."
+  type        = string
+  default     = "https://gatekeeper/api"
 }

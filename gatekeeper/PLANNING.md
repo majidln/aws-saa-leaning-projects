@@ -68,7 +68,7 @@ Terraform: REST API, `GET /hello`, `cmd/hello` behind it, no auth at all. Makefi
 ### Step 3 — The door is open
 `/hello` answers anyone. This is the heart of the project: code that decides whether a token is a genuine, unexpired Auth0 token meant for this API — without yet caring who sent it.
 
-`cmd/authorizer`: read `Authorization: Bearer …`, verify signature against the JWKS, check `iss`, `aud`, `exp`, and pin the algorithm to `RS256` (`jwt.WithValidMethods`). Allow or deny. No claims forwarded yet.
+`cmd/authorizer`: read `Authorization: Bearer …`, verify signature against the JWKS, check `iss`, `aud`, `exp`, and pin the algorithm to `RS256` (`jwt.WithValidMethods`). Allow or deny. No claims forwarded yet. See [STEP-3-GUIDE.md](STEP-3-GUIDE.md).
 
 Three traps:
 - **401 vs 403.** Returning the error `Unauthorized` makes API Gateway send 401; returning a `Deny` policy sends 403. Decide which failures mean which.
