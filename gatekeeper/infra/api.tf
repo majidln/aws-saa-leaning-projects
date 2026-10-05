@@ -41,6 +41,44 @@ resource "aws_lambda_permission" "apigw_hello" {
   source_arn    = "${aws_api_gateway_rest_api.gatekeeper.execution_arn}/*/GET/hello"
 }
 
+# ---------- GET /items ----------
+# Same authorizer as /hello — one authorizer serves every route, which is why its
+# policy resource is wildcarded to the stage rather than naming one method.
+
+resource "aws_api_gateway_resource" "items" {
+  rest_api_id = aws_api_gateway_rest_api.gatekeeper.id
+  parent_id   = aws_api_gateway_rest_api.gatekeeper.root_resource_id
+  path_part   = "items"
+}
+
+resource "aws_api_gateway_method" "items_get" {
+  rest_api_id   = aws_api_gateway_rest_api.gatekeeper.id
+  resource_id   = aws_api_gateway_resource.items.id
+  http_method   = "GET"
+  authorization = "CUSTOM"
+  authorizer_id = aws_api_gateway_authorizer.this.id
+}
+
+resource "aws_api_gateway_integration" "items_get" {
+  rest_api_id = aws_api_gateway_rest_api.gatekeeper.id
+  resource_id = aws_api_gateway_resource.items.id
+  http_method = aws_api_gateway_method.items_get.http_method
+
+  type                    = "AWS_PROXY"
+  integration_http_method = "POST"
+  uri                     = aws_lambda_function.items.invoke_arn
+}
+
+# Scoped to this one route: the items function trusts its authorizer context
+# precisely because API Gateway is the only thing that may invoke it.
+resource "aws_lambda_permission" "apigw_items" {
+  statement_id  = "AllowAPIGatewayInvokeItems"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.items.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.gatekeeper.execution_arn}/*/GET/items"
+}
+
 # ---------- Deployment ----------
 
 resource "aws_api_gateway_deployment" "gatekeeper" {
@@ -54,6 +92,9 @@ resource "aws_api_gateway_deployment" "gatekeeper" {
       aws_api_gateway_resource.hello,
       aws_api_gateway_method.hello_get,
       aws_api_gateway_integration.hello_get,
+      aws_api_gateway_resource.items,
+      aws_api_gateway_method.items_get,
+      aws_api_gateway_integration.items_get,
       aws_api_gateway_authorizer.this,
     ]))
   }

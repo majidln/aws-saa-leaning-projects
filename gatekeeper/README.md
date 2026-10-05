@@ -51,7 +51,13 @@ Unit tests need no AWS account, no Auth0 tenant, and no network: tokens are sign
 cd cmd/authorizer && go test ./...
 ```
 
-Useful variants, all from `cmd/authorizer`:
+```bash
+cd cmd/items && go test ./...
+```
+
+`cmd/authorizer` covers token verification and the tenant claim; `cmd/items` covers reading the tenant from the authorizer context and ignoring anything the client says about tenancy.
+
+Useful variants, shown for `cmd/authorizer` (they work the same in `cmd/items`):
 
 ```bash
 go test -v ./...                        # every case, by name
@@ -62,6 +68,63 @@ go test -run 'TestVerifyToken/expired' -v ./...   # one case inside a test
 ```
 
 Not covered by unit tests: `main()` (reads `AUTH0_DOMAIN`/`AUTH0_AUDIENCE` and fetches the JWKS), which is exercised against the deployed API.
+
+---
+
+## Calling the API
+
+Two steps: get a token from Auth0 for one of the tenant apps, then send it in an `Authorization: Bearer <token>` header. Which app the token came from decides which tenant the API sees. A token lasts 24 hours, and every one counts against Auth0's monthly quota, so reuse it.
+
+- `GET /hello` returns a greeting for any valid token.
+- `GET /items` returns the caller's `tenant_id` and `sub`.
+- No `Authorization` header or a non-Bearer scheme gives 401. A token that's present but invalid (tampered, expired, wrong audience, no tenant) gives 403.
+
+The requests live in [`bruno/`](bruno/) as a [Bruno](https://www.usebruno.com) collection: plain text files, committed with the code, with no account needed.
+
+```
+bruno/
+├── api/           both token requests, then /hello and /items for each tenant
+├── negative/      no header, garbage token, wrong scheme, tampered signature, spoofed X-Tenant-Id
+└── environments/  dev.bru: API URL, Auth0 domain, client IDs
+```
+
+**Setup**
+
+```bash
+brew install --cask bruno
+```
+
+The two client secrets go in `bruno/.env`, which is gitignored. Each of these reads a secret straight out of Auth0 into the file, so it never appears on screen. Without this file the token requests fail with 401, because Bruno sends an empty secret.
+
+```bash
+cd bruno && : > .env
+```
+
+```bash
+echo "TENANT_A_CLIENT_SECRET=$(auth0 apps show FmRUmDphBsUAzRE3VScUyxtzArFCDEyb --reveal-secrets --json --no-input | jq -r .client_secret)" >> .env
+```
+
+```bash
+echo "TENANT_B_CLIENT_SECRET=$(auth0 apps show lAh3UGttUGzmyrnWjblBh1iCCGRp5a79 --reveal-secrets --json --no-input | jq -r .client_secret)" >> .env
+```
+
+Check both lines are set, without printing the values:
+
+```bash
+awk -F= '{print $1": "(length($0)>length($1)+1 ? "set" : "EMPTY")}' .env
+```
+
+Then in Bruno: **Open Collection**, choose the `bruno/` folder, select the `dev` environment, and send `Get tenant-a token` and `Get tenant-b token` first. The other requests reuse those tokens. The folders run in order, `api` then `negative`.
+
+**From the command line**
+
+```bash
+cd bruno && npx @usebruno/cli run --env dev -r
+```
+
+It reads the same `.env`. Expect 10 requests passing.
+
+`environments/dev.bru` has the API URL hardcoded, and its ID changes if the stack is destroyed and re-applied. Get the current one with `terraform output -raw invoke_url` from `infra/`.
 
 ---
 

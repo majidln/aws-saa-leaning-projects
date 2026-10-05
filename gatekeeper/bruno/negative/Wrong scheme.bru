@@ -1,0 +1,27 @@
+meta {
+  name: Wrong scheme
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{api_url}}/items
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Basic dXNlcjpwYXNzd29yZA==
+}
+
+assert {
+  res.status: eq 401
+}
+
+tests {
+  // Reaches the authorizer (the header exists) but fails the shape check, which
+  // returns the error "Unauthorized" rather than a Deny policy.
+  test("401 — header present but not Bearer", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

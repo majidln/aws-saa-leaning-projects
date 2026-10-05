@@ -1,0 +1,39 @@
+meta {
+  name: Tampered token
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{api_url}}/items
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tampered_token}}
+}
+
+script:pre-request {
+  // Flip the first character of the signature. Not the last: for a 2048-bit key
+  // its trailing bits are unused, so a change there can decode to the same bytes.
+  const token = bru.getVar("tenant_a_token");
+  if (!token) {
+    throw new Error("run 'Get tenant-a token' first");
+  }
+  const [header, payload, signature] = token.split(".");
+  const flipped = (signature[0] === "A" ? "B" : "A") + signature.slice(1);
+  bru.setVar("tampered_token", `${header}.${payload}.${flipped}`);
+}
+
+assert {
+  res.status: eq 403
+}
+
+tests {
+  // The signature is what makes a token tamper-evident: editing any part of it
+  // breaks verification against Auth0's public key.
+  test("403 — signature no longer verifies", function() {
+    expect(res.getStatus()).to.equal(403);
+  });
+}

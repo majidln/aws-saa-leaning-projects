@@ -25,6 +25,10 @@ var keyFunc jwt.Keyfunc
 // Set once per cold start in main(). issuer must match Auth0's iss exactly, trailing slash included.
 var issuer, audience string
 
+// Namespaced by Auth0's rule — it drops custom claims that aren't. Set by the
+// add-tenant-id Action from the calling app's metadata.
+const tenantClaim = "https://gatekeeper/tenant_id"
+
 func handler(ctx context.Context, req events.APIGatewayCustomAuthorizerRequestTypeRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	log := logger.With("request_id", req.RequestContext.RequestID, "method_arn", req.MethodArn)
 
@@ -46,9 +50,39 @@ func handler(ctx context.Context, req events.APIGatewayCustomAuthorizerRequestTy
 		return policy("anonymous", "Deny", resource), nil
 	}
 
+	// A genuine token with no tenant is unusable: a multi-tenant backend must never
+	// run with an unknown tenant. The Action refuses to issue such a token, but the
+	// authorizer must not assume the Action ran — it can be detached in two clicks.
+	tenantID := stringClaim(token, tenantClaim)
+	if tenantID == "" {
+		log.InfoContext(ctx, "deny", "reason", "missing or malformed "+tenantClaim+" claim")
+		return policy("anonymous", "Deny", resource), nil
+	}
+
 	sub, _ := token.Claims.GetSubject()
-	log.InfoContext(ctx, "allow", "sub", sub)
-	return policy(sub, "Allow", resource), nil
+
+	allow := policy(sub, "Allow", resource)
+	// Only channel to the backend. Strings only: API Gateway rejects arrays and
+	// objects here. scope stays one space-separated string — splitting is Step 6's job.
+	allow.Context = map[string]any{
+		"tenant_id": tenantID,
+		"sub":       sub,
+		"scope":     stringClaim(token, "scope"),
+	}
+
+	log.InfoContext(ctx, "allow", "sub", sub, "tenant_id", tenantID)
+	return allow, nil
+}
+
+// stringClaim reads a claim that has no typed accessor. Custom and optional claims
+// arrive as whatever JSON held, so anything but a string counts as absent.
+func stringClaim(token *jwt.Token, name string) string {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return ""
+	}
+	s, _ := claims[name].(string)
+	return strings.TrimSpace(s)
 }
 
 // verifyToken checks the signature against the key kf returns for the token's kid,

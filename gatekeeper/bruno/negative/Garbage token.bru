@@ -1,0 +1,27 @@
+meta {
+  name: Garbage token
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{api_url}}/items
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer not.a.real.token
+}
+
+assert {
+  res.status: eq 403
+}
+
+tests {
+  // A token was presented and rejected: Deny policy → 403. Contrast with the
+  // missing-header case, which is 401.
+  test("403 — you authenticated, and the answer is no", function() {
+    expect(res.getStatus()).to.equal(403);
+  });
+}
