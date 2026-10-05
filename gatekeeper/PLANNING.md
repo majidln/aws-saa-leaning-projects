@@ -84,7 +84,7 @@ The authorizer knows a token is valid; the backend has no idea which tenant is c
 
 Auth0 Action on the **Machine to Machine** trigger (`credentials-exchange` — `post-login` never fires for `client_credentials`) copies `tenant_id` from the app's metadata into a namespaced claim, `https://gatekeeper/tenant_id`. Auth0 silently drops custom claims that aren't namespaced. Second M2M app for a second tenant.
 
-Authorizer returns `tenant_id`, `sub`, and `scope` in the authorizer **context**; the backend reads them from `requestContext.authorizer`. Context values must be strings, numbers, or booleans — no arrays or objects.
+Authorizer returns `tenant_id`, `sub`, and `scope` in the authorizer **context**; the backend reads them from `requestContext.authorizer`. Context values must be strings, numbers, or booleans — no arrays or objects. See [STEP-4-GUIDE.md](STEP-4-GUIDE.md).
 
 **Exit:** tokens from both apps carry different `tenant_id`s. `cmd/items` logs the tenant it got from the authorizer context and never parses the JWT itself — check the code: no JWT import in `cmd/items`.
 

@@ -32,3 +32,17 @@ variable "auth0_audience" {
   type        = string
   default     = "https://gatekeeper/api"
 }
+
+# Credentials for the terraform-gatekeeper M2M app (Management API, actions scopes only).
+# Not tenant-a/tenant-b: those mint tokens for the API and can't manage Auth0.
+# No defaults on purpose — Terraform stops and asks rather than using a wrong identity.
+variable "auth0_client_id" {
+  description = "Client ID of the Auth0 app Terraform manages config with. Set with TF_VAR_auth0_client_id."
+  type        = string
+}
+
+variable "auth0_client_secret" {
+  description = "Its client secret. Set with TF_VAR_auth0_client_secret, never in a file."
+  type        = string
+  sensitive   = true
+}

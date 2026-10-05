@@ -1,0 +1,23 @@
+meta {
+  name: No auth header
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{api_url}}/items
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 401
+}
+
+tests {
+  // API Gateway answers before the authorizer is invoked: identity_source names
+  // the Authorization header, so a request without it never reaches our code.
+  test("401, not 403 — you didn't authenticate", function() {
+    expect(res.getStatus()).to.equal(401);
+  });
+}

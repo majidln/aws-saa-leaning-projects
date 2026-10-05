@@ -1,0 +1,28 @@
+meta {
+  name: GET hello
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{api_url}}/hello
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tenant_a_token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  // Same authorizer as /items — proof the Step 3 policy resource is wildcarded
+  // to the stage rather than naming one method.
+  test("open to any valid token", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().message).to.equal("hello from gatekeeper");
+  });
+}

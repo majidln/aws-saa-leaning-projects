@@ -1,0 +1,32 @@
+meta {
+  name: GET items (tenant-a)
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{api_url}}/items
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tenant_a_token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("serves tenant-a its own tenant", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().tenant_id).to.equal("tenant-a");
+  });
+
+  // The backend reads the authorizer context, never the token: sub comes from the
+  // verified token via the authorizer.
+  test("reports the calling client", function() {
+    expect(res.getBody().sub).to.contain("@clients");
+  });
+}

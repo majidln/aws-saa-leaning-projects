@@ -1,0 +1,28 @@
+meta {
+  name: GET items (tenant-b)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{api_url}}/items
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tenant_b_token}}
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  // Same URL as tenant-a's request — only the token differs, and that alone
+  // decides whose data the backend would serve in Step 5.
+  test("serves tenant-b its own tenant", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().tenant_id).to.equal("tenant-b");
+  });
+}

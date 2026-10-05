@@ -8,6 +8,11 @@ output "hello_url" {
   value       = "${aws_api_gateway_stage.this.invoke_url}/hello"
 }
 
+output "items_url" {
+  description = "GET this with a token to see your tenant"
+  value       = "${aws_api_gateway_stage.this.invoke_url}/items"
+}
+
 output "hello_function_name" {
   value = aws_lambda_function.hello.function_name
 }

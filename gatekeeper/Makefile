@@ -1,4 +1,4 @@
-FUNCTIONS := hello authorizer
+FUNCTIONS := hello authorizer items
 
 .PHONY: build clean $(FUNCTIONS:%=build-%)
 

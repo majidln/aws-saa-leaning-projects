@@ -1,0 +1,29 @@
+meta {
+  name: Spoof X-Tenant-Id
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{api_url}}/items?tenant=tenant-b&tenant_id=tenant-b
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{tenant_a_token}}
+  X-Tenant-Id: tenant-b
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  // The whole point of Step 4: tenancy comes from the signed token via the
+  // authorizer context, so client input about tenancy is data, never identity.
+  test("client input cannot change the tenant", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().tenant_id).to.equal("tenant-a");
+  });
+}

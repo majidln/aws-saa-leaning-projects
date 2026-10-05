@@ -50,12 +50,16 @@ func testKeyfunc(t *jwt.Token) (any, error) {
 
 func validClaims() jwt.MapClaims {
 	now := time.Now()
+	// Mirrors a real token from the tenant: the add-tenant-id Action always adds
+	// the tenant claim, so a token without one is the exception, not the baseline.
 	return jwt.MapClaims{
-		"iss": testIssuer,
-		"aud": testAudience,
-		"sub": testSub,
-		"iat": now.Unix(),
-		"exp": now.Add(time.Hour).Unix(),
+		"iss":       testIssuer,
+		"aud":       testAudience,
+		"sub":       testSub,
+		"iat":       now.Unix(),
+		"exp":       now.Add(time.Hour).Unix(),
+		tenantClaim: testTenant,
+		"scope":     testScope,
 	}
 }
 
@@ -460,6 +464,74 @@ func TestHandlerAllowsValidToken(t *testing.T) {
 		t.Fatalf("handler() error = %v", err)
 	}
 	assertPolicy(t, resp, testSub, "Allow")
+}
+
+const (
+	testTenant = "tenant-a"
+	testScope  = "read:items write:items"
+)
+
+func TestHandlerPassesTenantToBackend(t *testing.T) {
+	setupHandler(t)
+	tok := signRS256(t, signingKey, testKID, claimsWith(map[string]any{
+		tenantClaim: testTenant,
+		"scope":     testScope,
+	}))
+
+	resp, err := handler(context.Background(), request(bearer(tok)))
+	if err != nil {
+		t.Fatalf("handler() error = %v", err)
+	}
+	assertPolicy(t, resp, testSub, "Allow")
+
+	want := map[string]any{"tenant_id": testTenant, "sub": testSub, "scope": testScope}
+	for k, v := range want {
+		if got := resp.Context[k]; got != v {
+			t.Errorf("context[%q] = %v, want %v", k, got, v)
+		}
+	}
+	// API Gateway only accepts strings, numbers and booleans here — and the raw
+	// token must never travel to the backend's own log group.
+	for k, v := range resp.Context {
+		switch v.(type) {
+		case string, int, int64, float64, bool:
+		default:
+			t.Errorf("context[%q] is %T; must be string, number or bool", k, v)
+		}
+		if s, ok := v.(string); ok && strings.Count(s, ".") == 2 && len(s) > 100 {
+			t.Errorf("context[%q] looks like a JWT", k)
+		}
+	}
+}
+
+// A genuine, unexpired token for this API — but with no usable tenant. The Action
+// shouldn't issue one, yet the authorizer can't assume the Action ran.
+func TestHandlerDeniesTokenWithoutUsableTenant(t *testing.T) {
+	tests := map[string]jwt.MapClaims{
+		"claim absent":      claimsWith(nil, tenantClaim),
+		"empty string":      claimsWith(map[string]any{tenantClaim: ""}),
+		"whitespace only":   claimsWith(map[string]any{tenantClaim: "   "}),
+		"number":            claimsWith(map[string]any{tenantClaim: 42}),
+		"boolean":           claimsWith(map[string]any{tenantClaim: true}),
+		"null":              claimsWith(map[string]any{tenantClaim: nil}),
+		"array":             claimsWith(map[string]any{tenantClaim: []string{"tenant-a"}}),
+		"object":            claimsWith(map[string]any{tenantClaim: map[string]any{"id": "tenant-a"}}),
+		"unnamespaced only": claimsWith(map[string]any{"tenant_id": testTenant}, tenantClaim),
+	}
+	for name, claims := range tests {
+		t.Run(name, func(t *testing.T) {
+			setupHandler(t)
+
+			resp, err := handler(context.Background(), request(bearer(signRS256(t, signingKey, testKID, claims))))
+			if err != nil {
+				t.Fatalf("handler() error = %v, want a Deny policy and no error (403)", err)
+			}
+			assertPolicy(t, resp, "anonymous", "Deny")
+			if len(resp.Context) != 0 {
+				t.Errorf("Context = %v, want empty: a denied request must carry nothing to the backend", resp.Context)
+			}
+		})
+	}
 }
 
 func TestHandlerAcceptsLowercaseHeaderName(t *testing.T) {

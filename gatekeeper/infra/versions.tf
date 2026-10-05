@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.0"
     }
+    auth0 = {
+      source  = "auth0/auth0"
+      version = "~> 1.36"
+    }
   }
 
   backend "s3" {

@@ -1,0 +1,44 @@
+meta {
+  name: Get tenant-a token
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://{{auth0_domain}}/oauth/token
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "client_id": "{{tenant_a_client_id}}",
+    "client_secret": "{{tenant_a_client_secret}}",
+    "audience": "{{audience}}",
+    "grant_type": "client_credentials"
+  }
+}
+
+vars:post-response {
+  tenant_a_token: res.body.access_token
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("issues a token", function() {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().access_token).to.be.a("string");
+  });
+
+  // The add-tenant-id Action copies tenant_id from the app's metadata. Namespaced,
+  // or Auth0 drops it silently.
+  // The sandbox has no "base64url" Buffer encoding, so convert to standard base64.
+  test("token carries this tenant's id", function() {
+    const segment = res.getBody().access_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(Buffer.from(segment, "base64").toString("utf8"));
+    expect(payload["https://gatekeeper/tenant_id"]).to.equal("tenant-a");
+  });
+}
